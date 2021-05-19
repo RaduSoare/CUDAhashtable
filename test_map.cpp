@@ -37,15 +37,18 @@ GpuAllocator::GpuAllocator(long long int allocMax) {
  * @return cudaMalloc allocation if within bounds/limits
  */
 cudaError_t GpuAllocator::_cudaMalloc( void** devPtr, size_t size ) {
-
+	
 	if ( (this->allocCurrent + size) <= this->allocMax ) {
 		cudaError_t rt = cudaMalloc(devPtr, size);
 		this->allocCurrent += size;
 		this->allocMap[ *devPtr ] = size;
+		//cout << this->allocCurrent << " " << this->allocMax << endl;
 		return rt;
 	} else {
+		//cout << this->allocCurrent + size << " " << this->allocMax << endl;
 		DIE(true, "cudaMalloc would exceed allowed max alloc size" );
 	}
+	
 }
 
 
@@ -122,14 +125,26 @@ int main(int argc, char **argv)
 	int numChunks = 1;
 	int chunkSize = numKeys / numChunks;
 
-	glbGpuAllocator = new GpuAllocator(numKeys * sizeof(int) * 2 * 4);
+	glbGpuAllocator = new GpuAllocator(8 * sizeof(int) * 2 * 4);
 
 	GpuHashTable gHashTable(6);
 
+	cout << "INSERT 1" << endl;
 	int keysStart[] = {1, 2, 3, 4, 5};
 	int valuesStart[] = {7, 8, 9, 10, 11};
 
 	gHashTable.insertBatch(keysStart, valuesStart, chunkSize);
+
+	// numKeys = 3;
+	// numChunks = 1;
+	// chunkSize = numKeys / numChunks;
+
+	// cout << "INSERT 2" << endl;
+	// int keysStart1[] = {6,7,8};
+	// int valuesStart1[] = {12, 13, 14};
+
+	// gHashTable.insertBatch(keysStart1, valuesStart1, chunkSize);
+
 
 	
 

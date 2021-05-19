@@ -28,9 +28,10 @@ __device__ int getHash(int key, int capacity) {
 __global__ void kernel_insert_key(int *keys, int* values, int numKeys, HashTable* hashTable) {
 	int idx = threadIdx.x + blockDim.x * blockIdx.x;
 
-	if (idx >= hashTable->capacity - 1) {
+	if (idx >= numKeys) {
 		return;
 	}
+
 	
 	// Obtin elementul din array unde trebuie adaugat elementul
 	int hashcode = getHash(keys[idx], hashTable->capacity);
@@ -54,29 +55,42 @@ __global__ void kernel_insert_key(int *keys, int* values, int numKeys, HashTable
 		atomicAdd(&hashTable->size, 1);
 	}
 	
-	//printf("%d %d %d %d\n", idx, hashcode, hashTable->elements[hashcode].key, hashTable->elements[hashcode].value);
+	printf("%d %d %d %d\n", idx, hashcode, hashTable->elements[hashcode].key, hashTable->elements[hashcode].value);
 		
-
 }
 
 __global__ void kernel_get_key() {
 	
 }
 
-__global__ void kernel_reshape(HashTable* resizedHashTable, HashTable* oldHashTable) {
+__global__ void kernel_reshape(Elem* newElements, int newCapacity, HashTable* oldHashTable) {
+
 	int idx = threadIdx.x + blockDim.x * blockIdx.x;
 
 	if (idx >= oldHashTable->capacity - 1) {
 		return;
 	}
 
-	int hashcode = getHash(oldHashTable->elements[idx].key, resizedHashTable->capacity);
+	int hashcode = getHash(oldHashTable->elements[idx].key, newCapacity);
 
-	int oldValue = atomicCAS(&resizedHashTable->elements[hashcode].key, EMPTY_SLOT, oldHashTable->elements[hashcode].key);
+	int oldValue = atomicCAS(&newElements[hashcode].key, EMPTY_SLOT, oldHashTable->elements[hashcode].key);
 	if (oldValue == EMPTY_SLOT) {
-		atomicCAS(&resizedHashTable->elements[hashcode].value, EMPTY_SLOT, oldHashTable->elements[hashcode].value);
-		atomicAdd(&resizedHashTable->size, 1);
+		atomicCAS(&newElements[hashcode].value, EMPTY_SLOT, oldHashTable->elements[hashcode].value);
+		//atomicAdd(&resizedHashTable->size, 1);
 	}
+
+	////printf("%d %d %d %d\n",idx, hashcode, newElements[hashcode].key, newElements[hashcode].value);
+
+}
+
+__global__ void kernel_test(Elem* newElements, int size) {
+	int idx = threadIdx.x + blockDim.x * blockIdx.x;
+	
+	if (idx >= size) {
+		return;
+	}
+
+	printf("%d %d\n", newElements[idx].key, newElements[idx].value);
 }
 
 
@@ -129,33 +143,58 @@ float GpuHashTable::getLoadFactor() {
 void GpuHashTable::reshape(int numBucketsReshape) {
 	cudaError_t rc;
 	int numBlocks;
-	HashTable* resizedHashTable;
+	// HashTable* resizedHashTable;
 	
-	rc = glbGpuAllocator->_cudaMallocManaged((void**) &resizedHashTable, sizeof(HashTable));
-	if (rc != cudaSuccess) {
-		cout << "ResizedHashMap Malloc Failed!" << endl;
-		return;
-	}
+	// rc = glbGpuAllocator->_cudaMallocManaged((void**) &resizedHashTable, sizeof(HashTable));
+	// if (rc != cudaSuccess) {
+	// 	cout << "ResizedHashMap Malloc Failed!" << endl;
+	// 	return;
+	// }
 	//resizedHashTable->size = hashTable->size;
-	resizedHashTable->capacity = numBucketsReshape;
+	// resizedHashTable->capacity = numBucketsReshape;
 
-	rc = glbGpuAllocator->_cudaMalloc((void**) &(resizedHashTable->elements), resizedHashTable->size * sizeof(Elem));
+	// rc = glbGpuAllocator->_cudaMalloc((void**) &(resizedHashTable->elements), numBucketsReshape * sizeof(Elem));
+	// if (rc != cudaSuccess) {
+	// 	cout << "Elements Malloc Failed!" << endl;
+	// 	return;
+	// }
+
+	Elem* newElements;
+	rc = glbGpuAllocator->_cudaMalloc((void**) &newElements, numBucketsReshape * sizeof(Elem));
 	if (rc != cudaSuccess) {
 		cout << "Elements Malloc Failed!" << endl;
 		return;
 	}
+	
 
-	numBlocks = hashTable->size / BLOCK_SIZE;
+	if (hashTable->size == 0) {
+		hashTable->elements = newElements;
+		hashTable->capacity = numBucketsReshape;
+		cout << "era gol" << endl;
+		return;
+	}
+
+ 	numBlocks = hashTable->size / BLOCK_SIZE;
 
 	// Caz in care block-ul final nu este complet
 	if (hashTable->size % BLOCK_SIZE) {
 		numBlocks++;
 	}
+	
+	
+	kernel_reshape<<<numBlocks, BLOCK_SIZE>>> (newElements, numBucketsReshape, hashTable);
+	cudaDeviceSynchronize();
 
-	// kernel_reshape<<<numBlocks, BLOCK_SIZE>>> (resizedHashTable, hashTable);
-	// cudaDeviceSynchronize();
+	cudaError_t error = cudaGetLastError();
+	if (error != cudaSuccess) {
+		fprintf(stderr, "ERROR: %s \n", cudaGetErrorString(error));
+	}
+	
 
-	hashTable = resizedHashTable;
+	 glbGpuAllocator->_cudaFree(hashTable->elements);
+	 //glbGpuAllocator->_cudaFree(hashTable);
+	hashTable->elements = newElements;
+	hashTable->capacity = numBucketsReshape; 
 
 }
 
@@ -194,21 +233,24 @@ bool GpuHashTable::insertBatch(int *keys, int* values, int numKeys) {
 		// Calculeaza noua capacitate
 		int updatedCapacity = ((float)(hashTable->size + numKeys) / MAX_LOAD_FACTOR) + 1;
 		cout << "Trebuie resize "<< updatedCapacity << endl;
-		//reshape(updatedCapacity);
+		reshape(updatedCapacity);
 		cout << hashTable->size << " " << hashTable->capacity << endl;
+		
 	}
 	
 	
 	kernel_insert_key<<<numBlocks, BLOCK_SIZE>>> (keysDev, valuesDev, numKeys, hashTable);
 	cudaDeviceSynchronize();
 	cout << hashTable->size << " " << hashTable->capacity << endl;
+	
 
 	glbGpuAllocator->_cudaFree(keysDev);
 	glbGpuAllocator->_cudaFree(valuesDev);
 
-	
-	//cout << hashTable->capacity << " " << hashTable->size << endl;
-	//cout << (float)hashTable->size / (float)hashTable->capacity << endl;
+	kernel_test<<<(hashTable->size / BLOCK_SIZE + 1), BLOCK_SIZE>>>(hashTable->elements, hashTable->size);
+	cudaDeviceSynchronize();
+
+
 	return true;
 }
 
