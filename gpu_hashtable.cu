@@ -55,12 +55,31 @@ __global__ void kernel_insert_key(int *keys, int* values, int numKeys, HashTable
 		atomicAdd(&hashTable->size, 1);
 	}
 	
-	printf("%d %d %d %d\n", idx, hashcode, hashTable->elements[hashcode].key, hashTable->elements[hashcode].value);
+	//printf("%d %d %d %d\n", idx, hashcode, hashTable->elements[hashcode].key, hashTable->elements[hashcode].value);
 		
 }
 
-__global__ void kernel_get_key() {
-	
+__global__ void kernel_get(HashTable* hashTable, int* keys, int* values, int numKeys) {
+	int idx = threadIdx.x + blockDim.x * blockIdx.x;
+
+	if (idx >= numKeys) {
+		return;
+	}
+
+	int hashcode = getHash(keys[idx], hashTable->capacity);
+	bool foundKey = false;
+
+	while(!foundKey) {
+		if (hashTable->elements[hashcode].key == keys[hashcode]) {
+			values[hashcode] = hashTable->elements[hashcode].value;
+			foundKey = true;
+		} else if (hashTable->elements[hashcode].key == EMPTY_SLOT) {
+			values[hashcode] = EMPTY_SLOT;
+			break;
+		}
+		hashcode = (hashcode + 1)  % (hashTable->capacity - 1);
+	}
+
 }
 
 __global__ void kernel_reshape(Elem* newElements, int newCapacity, HashTable* oldHashTable) {
@@ -132,9 +151,6 @@ GpuHashTable::~GpuHashTable() {
 	glbGpuAllocator->_cudaFree(hashTable);
 }
 
-float GpuHashTable::getLoadFactor() {
-	return (float)hashTable->size / (float)hashTable->capacity;
-}
 
 /**
  * Function reshape
@@ -143,21 +159,6 @@ float GpuHashTable::getLoadFactor() {
 void GpuHashTable::reshape(int numBucketsReshape) {
 	cudaError_t rc;
 	int numBlocks;
-	// HashTable* resizedHashTable;
-	
-	// rc = glbGpuAllocator->_cudaMallocManaged((void**) &resizedHashTable, sizeof(HashTable));
-	// if (rc != cudaSuccess) {
-	// 	cout << "ResizedHashMap Malloc Failed!" << endl;
-	// 	return;
-	// }
-	//resizedHashTable->size = hashTable->size;
-	// resizedHashTable->capacity = numBucketsReshape;
-
-	// rc = glbGpuAllocator->_cudaMalloc((void**) &(resizedHashTable->elements), numBucketsReshape * sizeof(Elem));
-	// if (rc != cudaSuccess) {
-	// 	cout << "Elements Malloc Failed!" << endl;
-	// 	return;
-	// }
 
 	Elem* newElements;
 	rc = glbGpuAllocator->_cudaMalloc((void**) &newElements, numBucketsReshape * sizeof(Elem));
@@ -170,7 +171,7 @@ void GpuHashTable::reshape(int numBucketsReshape) {
 	if (hashTable->size == 0) {
 		hashTable->elements = newElements;
 		hashTable->capacity = numBucketsReshape;
-		cout << "era gol" << endl;
+		//cout << "era gol" << endl;
 		return;
 	}
 
@@ -203,7 +204,8 @@ void GpuHashTable::reshape(int numBucketsReshape) {
  * Inserts a batch of key:value, using GPU and wrapper allocators
  */
 bool GpuHashTable::insertBatch(int *keys, int* values, int numKeys) {
-	int rc, numBlocks;
+	cudaError_t rc;
+	int numBlocks;
 	// Aloca memorie pentru array-urile de chei si de valori in GPU
 	int *keysDev, *valuesDev;
 
@@ -231,25 +233,21 @@ bool GpuHashTable::insertBatch(int *keys, int* values, int numKeys) {
 	// Caz cand e nevoie de rehash
 	if ((float)(hashTable->size + numKeys) / hashTable->capacity >= MAX_LOAD_FACTOR) {
 		// Calculeaza noua capacitate
-		int updatedCapacity = ((float)(hashTable->size + numKeys) / MAX_LOAD_FACTOR) + 1;
-		cout << "Trebuie resize "<< updatedCapacity << endl;
-		reshape(updatedCapacity);
-		cout << hashTable->size << " " << hashTable->capacity << endl;
+		//int updatedCapacity = ((float)(hashTable->size + numKeys) / MAX_LOAD_FACTOR) + 1;
+		//cout << "Trebuie resize "<< updatedCapacity << endl;
+		//reshape(updatedCapacity);
+		//cout << hashTable->size << " " << hashTable->capacity << endl;
 		
 	}
 	
 	
 	kernel_insert_key<<<numBlocks, BLOCK_SIZE>>> (keysDev, valuesDev, numKeys, hashTable);
 	cudaDeviceSynchronize();
-	cout << hashTable->size << " " << hashTable->capacity << endl;
+	//cout << hashTable->size << " " << hashTable->capacity << endl;
 	
 
 	glbGpuAllocator->_cudaFree(keysDev);
 	glbGpuAllocator->_cudaFree(valuesDev);
-
-	kernel_test<<<(hashTable->size / BLOCK_SIZE + 1), BLOCK_SIZE>>>(hashTable->elements, hashTable->size);
-	cudaDeviceSynchronize();
-
 
 	return true;
 }
@@ -259,5 +257,34 @@ bool GpuHashTable::insertBatch(int *keys, int* values, int numKeys) {
  * Gets a batch of key:value, using GPU
  */
 int* GpuHashTable::getBatch(int* keys, int numKeys) {
-	return NULL;
+	cudaError_t rc;
+	int numBlocks;
+	int *keysDev, *values;
+
+
+	rc = glbGpuAllocator->_cudaMalloc((void **) &keysDev, numKeys * sizeof(int));
+	if (rc != cudaSuccess) {
+		perror("keysDev Malloc Failed!");
+		return NULL;
+	}
+	rc = glbGpuAllocator->_cudaMallocManaged((void **) &values, numKeys * sizeof(int));
+	if (rc != cudaSuccess) {
+		perror("valuesDev Malloc Failed!");
+		return NULL;
+	}
+	
+	cudaMemcpy(keysDev, keys , numKeys * sizeof(int), cudaMemcpyHostToDevice);
+
+	numBlocks = numKeys / BLOCK_SIZE;
+
+	// Caz in care block-ul final nu este complet
+	if (numKeys % BLOCK_SIZE) {
+		numBlocks++;
+	}
+	kernel_get<<<numBlocks, BLOCK_SIZE>>> (hashTable, keysDev, values, numKeys);
+	cudaDeviceSynchronize();
+
+	glbGpuAllocator->_cudaFree(keysDev);
+
+	return values;
 }

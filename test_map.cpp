@@ -135,6 +135,12 @@ int main(int argc, char **argv)
 
 	gHashTable.insertBatch(keysStart, valuesStart, chunkSize);
 
+	int n = 3;
+	int* arr = (int*)calloc(n, sizeof(int));
+	int keys[] = {2, 4, 5};
+	arr = gHashTable.getBatch(keysStart, n);
+
+
 	// numKeys = 3;
 	// numChunks = 1;
 	// chunkSize = numKeys / numChunks;
@@ -216,6 +222,7 @@ int main(int argc, char **argv)
 	// 	<< "loadfactor: " + to_string( (int)(hashLoadFactor * 100.f) ) + "%" << endl;
 
 	// 	// check load factor
+		
 	// 	DIE( loadFactorMin > hashLoadFactor, "loadFactorMin > hashLoadFactor");
 	// 	DIE( loadFactorMax < hashLoadFactor, "loadFactorMax < hashLoadFactor");
 

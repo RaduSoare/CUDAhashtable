@@ -42,8 +42,6 @@ class GpuHashTable
 		
 		bool insertBatch(int *keys, int* values, int numKeys);
 		int* getBatch(int* key, int numItems);
-
-		float getLoadFactor();
 	
 		~GpuHashTable();
 };
