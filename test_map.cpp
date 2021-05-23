@@ -121,167 +121,169 @@ void fillRandom(vector<int> &vecKeys, vector<int> &vecValues, int numEntries) {
  */
 int main(int argc, char **argv)
 {
-	int numKeys = 5;
-	int numChunks = 1;
-	int chunkSize = numKeys / numChunks;
+	// int numKeys = 5;
+	// int numChunks = 1;
+	// int chunkSize = numKeys / numChunks;
 
-	glbGpuAllocator = new GpuAllocator(8 * sizeof(int) * 2 * 4);
+	// glbGpuAllocator = new GpuAllocator(8 * sizeof(int) * 2 * 4);
 
-	GpuHashTable gHashTable(6);
+	//  GpuHashTable gHashTable(6);
 
-	cout << "INSERT 1" << endl;
-	int keysStart[] = {1, 2, 3, 4, 5};
-	int valuesStart[] = {7, 8, 9, 10, 11};
+	// cout << "INSERT 1" << endl;
+	// int keysStart[] = {1, 2, 3, 4, 5};
+	// int valuesStart[] = {7, 8, 9, 10, 11};
 
-	gHashTable.insertBatch(keysStart, valuesStart, chunkSize);
+	// gHashTable.insertBatch(keysStart, valuesStart, chunkSize);
 
-	int n = 3;
-	int* arr = (int*)calloc(n, sizeof(int));
-	int keys[] = {2, 4, 5};
-	arr = gHashTable.getBatch(keysStart, n);
-
-
-	// numKeys = 3;
-	// numChunks = 1;
-	// chunkSize = numKeys / numChunks;
+	
 
 	// cout << "INSERT 2" << endl;
-	// int keysStart1[] = {6,7,8};
+	// int keysStart1[] = {6, 7, 8};
 	// int valuesStart1[] = {12, 13, 14};
 
-	// gHashTable.insertBatch(keysStart1, valuesStart1, chunkSize);
+	// gHashTable.insertBatch(keysStart1, valuesStart1, 3);
 
+	// int n = 3;
+	// int* arr = (int*)calloc(n, sizeof(int));
+	// int keys[] = {2, 7, 8};
+	// arr = gHashTable.getBatch(keys, n);
 
-	
-
-
-
-	// clock_t begin;
-	// double elapsedTime;
-	
-	// int numKeys = 0;
-	// int numChunks = 0;
-	// int minSpeed = 100;
-	// vector<int> vecKeys;
-	// vector<int> vecValues;
-	// int *valuesGot = NULL;
-	
-	// DIE(argc != 4, 
-	// 	"ERR, args num, call ./bin test_numKeys test_numChunks hash_speed");
-	
-	// numKeys = stoll(argv[1]);
-	// DIE((numKeys < 1) || (numKeys >= numeric_limits<int>::max()),
-	// 	"ERR, numKeys should be greater or equal to 1 and less than maxint");
-	
-	// numChunks = stoll(argv[2]);
-	// DIE((numChunks < 1) || (numChunks >= numKeys), 
-	// 	"ERR, numChunks should be greater or equal to 1");
-
-	// minSpeed = stoll(argv[3]);
-	// DIE((minSpeed < 0) || (minSpeed >= 500), 
-	// 	"ERR, minSpeed should be between 0 and 500");
-
-	// float loadFactorMin = 0.5f;
-	// float loadFactorMax = 1.0f;
-
-	// float speedGet = 0.f;
-	// float speedInsert = 0.f;
-	
-	// fillRandom(vecKeys, vecValues, numKeys);
-	
-	// glbGpuAllocator = new GpuAllocator(numKeys * sizeof(int) * 2 * 4);
-
-	// GpuHashTable gHashTable(1);
-	
-	// int inserted = 0;
-	// int chunkSize = numKeys / numChunks;
-	// gHashTable.reshape(chunkSize);
-	
-	// // perform INSERT and test performance
-	// for(int chunkStart = 0; chunkStart < numKeys; chunkStart += chunkSize) {
-		
-	// 	int *keysStart = &vecKeys[chunkStart];
-	// 	int *valuesStart = &vecValues[chunkStart];
-		
-	// 	auto start = high_resolution_clock::now();
-
-	// 	// INSERT stage
-	// 	gHashTable.insertBatch(keysStart, valuesStart, chunkSize);
-	// 	inserted += chunkSize;
-
-	// 	auto stop = high_resolution_clock::now();
-	// 	elapsedTime = duration_cast<microseconds>(stop - start).count();
-
-	// 	float speed = chunkSize / elapsedTime;
-	// 	float hashLoadFactor = (float) inserted * sizeof(int) * 2.f / glbGpuAllocator->_used();
-
-	// 	cout << setw(20) << left << "HASH_BATCH_INSERT"
-	// 	<< setw(24) << left << "count: " + to_string(chunkSize)
-	// 	<< setw(24) << left << "speed: " + to_string( (int)speed ) + "M/sec"
-	// 	<< setw(24) << left 
-	// 	<< "loadfactor: " + to_string( (int)(hashLoadFactor * 100.f) ) + "%" << endl;
-
-	// 	// check load factor
-		
-	// 	DIE( loadFactorMin > hashLoadFactor, "loadFactorMin > hashLoadFactor");
-	// 	DIE( loadFactorMax < hashLoadFactor, "loadFactorMax < hashLoadFactor");
-
-	// 	speedInsert += speed;
-	// }
-	
-	// // perform INSERT for update validation
-	// int chunkSizeUpdate = min(64, numKeys);
-	// for(int chunkStart = 0; chunkStart < chunkSizeUpdate; chunkStart++) {
-	// 	vecValues[chunkStart] += 1111111 + chunkStart;
+	// for (int i = 0; i < n; i++) {
+	// 	cout << keys[i] << " " << arr[i] << endl;
 	// }
 
-	// gHashTable.insertBatch(&vecKeys[0], &vecValues[0], chunkSizeUpdate);
 	
-	// // perform GET and test performance
-	// for(int chunkStart = 0; chunkStart < numKeys; chunkStart += chunkSize) {
+
+
+	clock_t begin;
+	double elapsedTime;
+	
+	int numKeys = 0;
+	int numChunks = 0;
+	int minSpeed = 100;
+	vector<int> vecKeys;
+	vector<int> vecValues;
+	int *valuesGot = NULL;
+	
+	DIE(argc != 4, 
+		"ERR, args num, call ./bin test_numKeys test_numChunks hash_speed");
+	
+	numKeys = stoll(argv[1]);
+	DIE((numKeys < 1) || (numKeys >= numeric_limits<int>::max()),
+		"ERR, numKeys should be greater or equal to 1 and less than maxint");
+	
+	numChunks = stoll(argv[2]);
+	DIE((numChunks < 1) || (numChunks >= numKeys), 
+		"ERR, numChunks should be greater or equal to 1");
+
+	minSpeed = stoll(argv[3]);
+	DIE((minSpeed < 0) || (minSpeed >= 500), 
+		"ERR, minSpeed should be between 0 and 500");
+
+	float loadFactorMin = 0.5f;
+	float loadFactorMax = 1.0f;
+
+	float speedGet = 0.f;
+	float speedInsert = 0.f;
+	
+	fillRandom(vecKeys, vecValues, numKeys);
+	
+	glbGpuAllocator = new GpuAllocator(numKeys * sizeof(int) * 2 * 4);
+
+	GpuHashTable gHashTable(1);
+	
+	int inserted = 0;
+	int chunkSize = numKeys / numChunks;
+	gHashTable.reshape(chunkSize);
+
+	
+	// perform INSERT and test performance
+	for(int chunkStart = 0; chunkStart < numKeys; chunkStart += chunkSize) {
 		
-	// 	int *keysStart = &vecKeys[chunkStart];
-
-	// 	auto start = high_resolution_clock::now();
-
-	// 	// GET stage
-	// 	valuesGot = gHashTable.getBatch(keysStart, chunkSize);
-
-	// 	auto stop = high_resolution_clock::now();
-	// 	elapsedTime = duration_cast<microseconds>(stop - start).count();
-
-	// 	float speed = chunkSize / elapsedTime;
-	// 	float hashLoadFactor = (float) inserted * sizeof(int) * 2.f / glbGpuAllocator->_used();
-
-	// 	cout << setw(20) << left << "HASH_BATCH_GET"
-	// 	<< setw(24) << left << "count: " + to_string(chunkSize)
-	// 	<< setw(24) << left << "speed: " + to_string( (int)speed ) + "M/sec"
-	// 	<< setw(24) << left 
-	// 	<< "loadfactor: " + to_string( (int)(hashLoadFactor * 100.f) ) + "%" << endl;
-
-	// 	// check load factor
-	// 	DIE( loadFactorMin > hashLoadFactor, "loadFactorMin > hashLoadFactor" );
-	// 	DIE( loadFactorMax < hashLoadFactor, "loadFactorMax < hashLoadFactor" );
-	// 	DIE( valuesGot == NULL, "ERR, ptr valuesCheck cannot be NULL" );
-
-	// 	speedGet += speed;
+		int *keysStart = &vecKeys[chunkStart];
+		int *valuesStart = &vecValues[chunkStart];
 		
-	// 	int mistmatches = 0;
-	// 	for(int i = 0; i < chunkSize; i++) {
-	// 		if(vecValues[chunkStart + i] != valuesGot[i]) {
-	// 			mistmatches++;
-	// 			if(mistmatches < 32) {
-	// 				cout << "Expected " << vecValues[chunkStart + i]
-	// 				<< ", but got " << valuesGot[i] << " for key:" << keysStart[i] << endl;
-	// 			}
-	// 		}
-	// 	}
+		auto start = high_resolution_clock::now();
+
+		// INSERT stage
+		gHashTable.insertBatch(keysStart, valuesStart, chunkSize);
+		inserted += chunkSize;
+
+		auto stop = high_resolution_clock::now();
+		elapsedTime = duration_cast<microseconds>(stop - start).count();
+
+		float speed = chunkSize / elapsedTime;
+		float hashLoadFactor = (float) inserted * sizeof(int) * 2.f / glbGpuAllocator->_used();
+
+		cout << setw(20) << left << "HASH_BATCH_INSERT"
+		<< setw(24) << left << "count: " + to_string(chunkSize)
+		<< setw(24) << left << "speed: " + to_string( (int)speed ) + "M/sec"
+		<< setw(24) << left 
+		<< "loadfactor: " + to_string( (int)(hashLoadFactor * 100.f) ) + "%" << endl;
+
+		// check load factor
 		
-	// 	if(mistmatches > 0) {
-	// 		cout << "ERR, mistmatches: " << mistmatches << " / " << numKeys << endl;
-	// 		exit(1);
-	// 	}
-	// }
+		DIE( loadFactorMin > hashLoadFactor, "loadFactorMin > hashLoadFactor");
+		DIE( loadFactorMax < hashLoadFactor, "loadFactorMax < hashLoadFactor");
+
+		speedInsert += speed;
+	}
+	
+	// perform INSERT for update validation
+	int chunkSizeUpdate = min(64, numKeys);
+	for(int chunkStart = 0; chunkStart < chunkSizeUpdate; chunkStart++) {
+		vecValues[chunkStart] += 1111111 + chunkStart;
+	}
+
+	gHashTable.insertBatch(&vecKeys[0], &vecValues[0], chunkSizeUpdate);
+	
+	// perform GET and test performance
+	for(int chunkStart = 0; chunkStart < numKeys; chunkStart += chunkSize) {
+		
+		int *keysStart = &vecKeys[chunkStart];
+
+		auto start = high_resolution_clock::now();
+
+		// GET stage
+		valuesGot = gHashTable.getBatch(keysStart, chunkSize);
+
+		auto stop = high_resolution_clock::now();
+		elapsedTime = duration_cast<microseconds>(stop - start).count();
+
+		float speed = chunkSize / elapsedTime;
+		float hashLoadFactor = (float) inserted * sizeof(int) * 2.f / glbGpuAllocator->_used();
+
+		cout << setw(20) << left << "HASH_BATCH_GET"
+		<< setw(24) << left << "count: " + to_string(chunkSize)
+		<< setw(24) << left << "speed: " + to_string( (int)speed ) + "M/sec"
+		<< setw(24) << left 
+		<< "loadfactor: " + to_string( (int)(hashLoadFactor * 100.f) ) + "%" << endl;
+
+		// check load factor
+		DIE( loadFactorMin > hashLoadFactor, "loadFactorMin > hashLoadFactor" );
+		DIE( loadFactorMax < hashLoadFactor, "loadFactorMax < hashLoadFactor" );
+		DIE( valuesGot == NULL, "ERR, ptr valuesCheck cannot be NULL" );
+
+		speedGet += speed;
+		
+		int mistmatches = 0;
+		for(int i = 0; i < chunkSize; i++) {
+			if(vecValues[chunkStart + i] != valuesGot[i]) {
+				mistmatches++;
+				if(mistmatches < 32) {
+					cout << "Expected " << vecValues[chunkStart + i]
+					<< ", but got " << valuesGot[i] << " for key:" << keysStart[i] << endl;
+				}
+			}
+		}
+		
+		if(mistmatches > 0) {
+			cout << "ERR, mistmatches: " << mistmatches << " / " << numKeys << endl;
+			exit(1);
+		}
+	}
+
+	//
 
 	// float avgSpeedInsert = speedInsert / numChunks;
 	// float avgSpeedGet = speedGet / numChunks;

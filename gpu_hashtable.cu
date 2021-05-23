@@ -67,18 +67,16 @@ __global__ void kernel_get(HashTable* hashTable, int* keys, int* values, int num
 	}
 
 	int hashcode = getHash(keys[idx], hashTable->capacity);
-	bool foundKey = false;
 
+	bool foundKey = false;
 	while(!foundKey) {
-		if (hashTable->elements[hashcode].key == keys[hashcode]) {
-			values[hashcode] = hashTable->elements[hashcode].value;
+		if (hashTable->elements[hashcode].key == keys[idx]) {
+			values[idx] = hashTable->elements[hashcode].value;
 			foundKey = true;
-		} else if (hashTable->elements[hashcode].key == EMPTY_SLOT) {
-			values[hashcode] = EMPTY_SLOT;
-			break;
 		}
 		hashcode = (hashcode + 1)  % (hashTable->capacity - 1);
 	}
+	
 
 }
 
@@ -86,31 +84,26 @@ __global__ void kernel_reshape(Elem* newElements, int newCapacity, HashTable* ol
 
 	int idx = threadIdx.x + blockDim.x * blockIdx.x;
 
-	if (idx >= oldHashTable->capacity - 1) {
+	if (idx >= oldHashTable->capacity) {
 		return;
 	}
+	
 
 	int hashcode = getHash(oldHashTable->elements[idx].key, newCapacity);
+	//printf("%d %d %d %d\n",idx, hashcode, oldHashTable->elements[idx].key, oldHashTable->elements[idx].value);
+	bool rehashedKey = false;
 
-	int oldValue = atomicCAS(&newElements[hashcode].key, EMPTY_SLOT, oldHashTable->elements[hashcode].key);
-	if (oldValue == EMPTY_SLOT) {
-		atomicCAS(&newElements[hashcode].value, EMPTY_SLOT, oldHashTable->elements[hashcode].value);
-		//atomicAdd(&resizedHashTable->size, 1);
+	while(!rehashedKey) {
+		int old = atomicCAS(&newElements[hashcode].key, EMPTY_SLOT, oldHashTable->elements[idx].key);
+		if (old == EMPTY_SLOT) {
+			atomicCAS(&newElements[hashcode].value, EMPTY_SLOT, oldHashTable->elements[idx].value);
+			rehashedKey = true;
+		}
+		hashcode = (hashcode + 1)  % (newCapacity - 1);
 	}
-
-	////printf("%d %d %d %d\n",idx, hashcode, newElements[hashcode].key, newElements[hashcode].value);
 
 }
 
-__global__ void kernel_test(Elem* newElements, int size) {
-	int idx = threadIdx.x + blockDim.x * blockIdx.x;
-	
-	if (idx >= size) {
-		return;
-	}
-
-	printf("%d %d\n", newElements[idx].key, newElements[idx].value);
-}
 
 
 
@@ -169,16 +162,18 @@ void GpuHashTable::reshape(int numBucketsReshape) {
 	
 
 	if (hashTable->size == 0) {
+		glbGpuAllocator->_cudaFree(hashTable->elements);
 		hashTable->elements = newElements;
 		hashTable->capacity = numBucketsReshape;
-		//cout << "era gol" << endl;
+		cout << "era gol" << endl;
+
 		return;
 	}
-
- 	numBlocks = hashTable->size / BLOCK_SIZE;
-
+	
+ 	numBlocks = hashTable->capacity / BLOCK_SIZE;
+	
 	// Caz in care block-ul final nu este complet
-	if (hashTable->size % BLOCK_SIZE) {
+	if (hashTable->capacity % BLOCK_SIZE) {
 		numBlocks++;
 	}
 	
@@ -192,7 +187,7 @@ void GpuHashTable::reshape(int numBucketsReshape) {
 	}
 	
 
-	 glbGpuAllocator->_cudaFree(hashTable->elements);
+	glbGpuAllocator->_cudaFree(hashTable->elements);
 	 //glbGpuAllocator->_cudaFree(hashTable);
 	hashTable->elements = newElements;
 	hashTable->capacity = numBucketsReshape; 
@@ -208,6 +203,7 @@ bool GpuHashTable::insertBatch(int *keys, int* values, int numKeys) {
 	int numBlocks;
 	// Aloca memorie pentru array-urile de chei si de valori in GPU
 	int *keysDev, *valuesDev;
+
 
 	rc = glbGpuAllocator->_cudaMalloc((void **) &keysDev, numKeys * sizeof(int));
 	if (rc != cudaSuccess) {
@@ -233,14 +229,15 @@ bool GpuHashTable::insertBatch(int *keys, int* values, int numKeys) {
 	// Caz cand e nevoie de rehash
 	if ((float)(hashTable->size + numKeys) / hashTable->capacity >= MAX_LOAD_FACTOR) {
 		// Calculeaza noua capacitate
-		//int updatedCapacity = ((float)(hashTable->size + numKeys) / MAX_LOAD_FACTOR) + 1;
-		//cout << "Trebuie resize "<< updatedCapacity << endl;
-		//reshape(updatedCapacity);
-		//cout << hashTable->size << " " << hashTable->capacity << endl;
+		int updatedCapacity = ((float)(hashTable->size + numKeys) / MAX_LOAD_FACTOR) + 1;
+		cout << "Trebuie resize "<< updatedCapacity << endl;
+		fprintf(stdout, "%d\n", updatedCapacity);
+		reshape(updatedCapacity);
+		
 		
 	}
 	
-	
+	//cout << hashTable->size << " " << hashTable->capacity << endl;
 	kernel_insert_key<<<numBlocks, BLOCK_SIZE>>> (keysDev, valuesDev, numKeys, hashTable);
 	cudaDeviceSynchronize();
 	//cout << hashTable->size << " " << hashTable->capacity << endl;
@@ -273,6 +270,10 @@ int* GpuHashTable::getBatch(int* keys, int numKeys) {
 		return NULL;
 	}
 	
+	// for (int i = 0; i < numKeys; i++) {
+	// 	cout << keys[i] << endl;
+	// }
+
 	cudaMemcpy(keysDev, keys , numKeys * sizeof(int), cudaMemcpyHostToDevice);
 
 	numBlocks = numKeys / BLOCK_SIZE;
@@ -283,6 +284,11 @@ int* GpuHashTable::getBatch(int* keys, int numKeys) {
 	}
 	kernel_get<<<numBlocks, BLOCK_SIZE>>> (hashTable, keysDev, values, numKeys);
 	cudaDeviceSynchronize();
+
+	cudaError_t error = cudaGetLastError();
+	if (error != cudaSuccess) {
+		fprintf(stderr, "ERROR: %s \n", cudaGetErrorString(error));
+	}
 
 	glbGpuAllocator->_cudaFree(keysDev);
 
