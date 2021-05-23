@@ -43,8 +43,10 @@ __global__ void kernel_insert_key(int *keys, int* values, int numKeys, HashTable
 		// Obtine atomic elementul de pe slotul incercat 
 		int old = atomicCAS(&hashTable->elements[hashcode].key, EMPTY_SLOT, keys[idx]);
 		if (old == EMPTY_SLOT || old == keys[idx]) {
-			atomicCAS(&hashTable->elements[hashcode].value, EMPTY_SLOT, values[idx]);
-			foundEmptySlot = true;
+			// Fara atomicCAS pentru a face update cand cheile sunt egale
+			hashTable->elements[hashcode].value = values[idx];
+			//foundEmptySlot = true;
+			break;
 		}
 		// Trece la slotul urmator daca cel curent este ocupat
 		hashcode = (hashcode + 1)  % (hashTable->capacity - 1);
@@ -55,7 +57,6 @@ __global__ void kernel_insert_key(int *keys, int* values, int numKeys, HashTable
 		atomicAdd(&hashTable->size, 1);
 	}
 	
-	//printf("%d %d %d %d\n", idx, hashcode, hashTable->elements[hashcode].key, hashTable->elements[hashcode].value);
 		
 }
 
@@ -97,7 +98,8 @@ __global__ void kernel_reshape(Elem* newElements, int newCapacity, HashTable* ol
 		int old = atomicCAS(&newElements[hashcode].key, EMPTY_SLOT, oldHashTable->elements[idx].key);
 		if (old == EMPTY_SLOT) {
 			atomicCAS(&newElements[hashcode].value, EMPTY_SLOT, oldHashTable->elements[idx].value);
-			rehashedKey = true;
+			//rehashedKey = true;
+			break;
 		}
 		hashcode = (hashcode + 1)  % (newCapacity - 1);
 	}
@@ -165,8 +167,6 @@ void GpuHashTable::reshape(int numBucketsReshape) {
 		glbGpuAllocator->_cudaFree(hashTable->elements);
 		hashTable->elements = newElements;
 		hashTable->capacity = numBucketsReshape;
-		cout << "era gol" << endl;
-
 		return;
 	}
 	
@@ -188,7 +188,6 @@ void GpuHashTable::reshape(int numBucketsReshape) {
 	
 
 	glbGpuAllocator->_cudaFree(hashTable->elements);
-	 //glbGpuAllocator->_cudaFree(hashTable);
 	hashTable->elements = newElements;
 	hashTable->capacity = numBucketsReshape; 
 
@@ -230,8 +229,8 @@ bool GpuHashTable::insertBatch(int *keys, int* values, int numKeys) {
 	if ((float)(hashTable->size + numKeys) / hashTable->capacity >= MAX_LOAD_FACTOR) {
 		// Calculeaza noua capacitate
 		int updatedCapacity = ((float)(hashTable->size + numKeys) / MAX_LOAD_FACTOR) + 1;
-		cout << "Trebuie resize "<< updatedCapacity << endl;
-		fprintf(stdout, "%d\n", updatedCapacity);
+		//cout << "Trebuie resize "<< updatedCapacity << endl;
+		//fprintf(stdout, "%d\n", updatedCapacity);
 		reshape(updatedCapacity);
 		
 		

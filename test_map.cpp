@@ -125,9 +125,9 @@ int main(int argc, char **argv)
 	// int numChunks = 1;
 	// int chunkSize = numKeys / numChunks;
 
-	// glbGpuAllocator = new GpuAllocator(8 * sizeof(int) * 2 * 4);
+	// glbGpuAllocator = new GpuAllocator(10 * sizeof(int) * 2 * 4);
 
-	//  GpuHashTable gHashTable(6);
+	//  GpuHashTable gHashTable(12);
 
 	// cout << "INSERT 1" << endl;
 	// int keysStart[] = {1, 2, 3, 4, 5};
@@ -138,14 +138,14 @@ int main(int argc, char **argv)
 	
 
 	// cout << "INSERT 2" << endl;
-	// int keysStart1[] = {6, 7, 8};
-	// int valuesStart1[] = {12, 13, 14};
+	// int keysStart1[] = {5, 1};
+	// int valuesStart1[] = {66, 54};
 
-	// gHashTable.insertBatch(keysStart1, valuesStart1, 3);
+	// gHashTable.insertBatch(keysStart1, valuesStart1, 2);
 
 	// int n = 3;
 	// int* arr = (int*)calloc(n, sizeof(int));
-	// int keys[] = {2, 7, 8};
+	// int keys[] = {2, 5, 1};
 	// arr = gHashTable.getBatch(keys, n);
 
 	// for (int i = 0; i < n; i++) {
@@ -285,18 +285,18 @@ int main(int argc, char **argv)
 
 	//
 
-	// float avgSpeedInsert = speedInsert / numChunks;
-	// float avgSpeedGet = speedGet / numChunks;
+	float avgSpeedInsert = speedInsert / numChunks;
+	float avgSpeedGet = speedGet / numChunks;
 
-	// cout << "----------------------------------------------" << endl;
-	// cout << setw(24) << left << "AVG_INSERT: " + to_string( (int)avgSpeedInsert ) + " M/sec,"
-	// 	<< setw(24) << left<< "AVG_GET: " + to_string( (int)avgSpeedGet ) + " M/sec,"
-	// 	<< setw(24) << left<< "MIN_SPEED_REQ: " +  to_string(minSpeed) + " M/sec" << endl;
+	cout << "----------------------------------------------" << endl;
+	cout << setw(24) << left << "AVG_INSERT: " + to_string( (int)avgSpeedInsert ) + " M/sec,"
+		<< setw(24) << left<< "AVG_GET: " + to_string( (int)avgSpeedGet ) + " M/sec,"
+		<< setw(24) << left<< "MIN_SPEED_REQ: " +  to_string(minSpeed) + " M/sec" << endl;
 
-	// DIE( minSpeed > avgSpeedGet, "minSpeed > avgSpeedGet" );
-	// DIE( minSpeed > avgSpeedInsert, "minSpeed > avgSpeedInsert" );
+	DIE( minSpeed > avgSpeedGet, "minSpeed > avgSpeedGet" );
+	DIE( minSpeed > avgSpeedInsert, "minSpeed > avgSpeedInsert" );
 
-	// cout << endl;
+	cout << endl;
 
 	return 0;
 }
