@@ -1,9 +1,0 @@
-(test_map.cpp, 297): minSpeed > avgSpeedInsert: File exists
-Traceback (most recent call last):
-  File "bench.py", line 72, in <module>
-    output = subprocess.check_output(['./' + program, testEntries, testChunks, testSpeed])
-  File "/usr/lib64/python3.6/subprocess.py", line 356, in check_output
-    **kwargs).stdout
-  File "/usr/lib64/python3.6/subprocess.py", line 438, in run
-    output=stdout, stderr=stderr)
-subprocess.CalledProcessError: Command '['./gpu_hashtable', '1000000', '8', '40']' returned non-zero exit status 17.
