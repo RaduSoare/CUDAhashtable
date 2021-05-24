@@ -127,7 +127,7 @@ int main(int argc, char **argv)
 
 	// glbGpuAllocator = new GpuAllocator(10 * sizeof(int) * 2 * 4);
 
-	//  GpuHashTable gHashTable(12);
+	//  GpuHashTable gHashTable(6);
 
 	// cout << "INSERT 1" << endl;
 	// int keysStart[] = {1, 2, 3, 4, 5};

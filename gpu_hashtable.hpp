@@ -9,7 +9,7 @@ using namespace std;
 #define BLOCK_SIZE 1024
 #define MAX_LOAD_FACTOR 0.9f
 #define MIN_LOAD_FACTOR 0.67f
-#define DECENT_LOAD_FACTOR 0.7f
+#define DECENT_LOAD_FACTOR 0.67f
 
 typedef struct {
 	int key;

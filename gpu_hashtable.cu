@@ -25,6 +25,7 @@ __device__ int getHash(int key, int capacity) {
 	return key % capacity;
 }
 
+
 __global__ void kernel_insert_key(int *keys, int* values, int numKeys, HashTable* hashTable) {
 	int idx = threadIdx.x + blockDim.x * blockIdx.x;
 
@@ -37,25 +38,27 @@ __global__ void kernel_insert_key(int *keys, int* values, int numKeys, HashTable
 	int hashcode = getHash(keys[idx], hashTable->capacity);
 	bool foundEmptySlot = false;
 	int old = 0;
-	
-	// Cauta primul slot liber din array
-	while (!foundEmptySlot) {
-		// Obtine atomic elementul de pe slotul incercat 
-		int old = atomicCAS(&hashTable->elements[hashcode].key, EMPTY_SLOT, keys[idx]);
-		if (old == EMPTY_SLOT || old == keys[idx]) {
-			// Fara atomicCAS pentru a face update cand cheile sunt egale
-			hashTable->elements[hashcode].value = values[idx];
-			foundEmptySlot = true;
-			//break;
-		}
-		// Trece la slotul urmator daca cel curent este ocupat
-		hashcode = (hashcode + 1)  % (hashTable->capacity - 1);
-	}
 
-	// Mareste size-ul doar daca elementul a fost adaugat pe un slot gol
-	if (old == EMPTY_SLOT) {
-		atomicAdd(&hashTable->size, 1);
-	}
+		// Cauta primul slot liber din array
+		while (!foundEmptySlot) {
+			// Obtine atomic elementul de pe slotul incercat 
+			old = atomicCAS(&hashTable->elements[hashcode].key, EMPTY_SLOT, keys[idx]);
+			if (old == EMPTY_SLOT || old == keys[idx]) {
+				// Fara atomicCAS pentru a face update cand cheile sunt egale
+				hashTable->elements[hashcode].value = values[idx];
+				foundEmptySlot = true;
+				atomicAdd(&hashTable->size, 1);
+				return;
+			}
+			// Trece la slotul urmator daca cel curent este ocupat
+			hashcode = (hashcode + 1)  % (hashTable->capacity - 1);
+		}
+	
+		// Mareste size-ul doar daca elementul a fost adaugat pe un slot gol
+		// if (old == EMPTY_SLOT) {
+		// 	atomicAdd(&hashTable->size, 1);
+		// }
+
 	
 		
 }
@@ -85,17 +88,19 @@ __global__ void kernel_reshape(Elem* newElements, int newCapacity, HashTable* ol
 
 	int idx = threadIdx.x + blockDim.x * blockIdx.x;
 
-	if (idx >= oldHashTable->capacity) {
+	// 
+	if (idx >= oldHashTable->capacity || oldHashTable->elements[idx].key == EMPTY_SLOT) {
 		return;
 	}
-	
+	int old;
+	bool rehashedKey = false;
 
 	int hashcode = getHash(oldHashTable->elements[idx].key, newCapacity);
 	
-	bool rehashedKey = false;
+	
 
 	while(!rehashedKey) {
-		int old = atomicCAS(&newElements[hashcode].key, EMPTY_SLOT, oldHashTable->elements[idx].key);
+		old = atomicCAS(&newElements[hashcode].key, EMPTY_SLOT, oldHashTable->elements[idx].key);
 		if (old == EMPTY_SLOT) {
 			atomicCAS(&newElements[hashcode].value, EMPTY_SLOT, oldHashTable->elements[idx].value);
 			rehashedKey = true;
@@ -230,7 +235,8 @@ bool GpuHashTable::insertBatch(int *keys, int* values, int numKeys) {
 	if (newSize / hashTable->capacity >= MAX_LOAD_FACTOR) {
 		// Calculeaza noua capacitate
 		int updatedCapacity = (newSize / DECENT_LOAD_FACTOR) + 1;
-		//cout << hashTable->size << " " << numKeys << " " << hashTable->capacity << " " << updatedCapacity <<
+		//cout << hashTable->size << " " << numKeys << " " << hashTable->capacity << " " << updatedCapacity << endl;
+		
 		reshape(updatedCapacity);
 	}
 	
