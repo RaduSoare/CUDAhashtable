@@ -1,0 +1,37 @@
+
+
+
+------- Test T1 START	----------
+
+------- Test T1 END	---------- 	 [ FAILED ]
+Error with ['./gpu_hashtable', '1000000', '1', '10']
+
+
+
+------- Test T2 START	----------
+
+------- Test T2 END	---------- 	 [ FAILED ]
+Error with ['./gpu_hashtable', '1000000', '2', '20']
+
+
+
+------- Test T3 START	----------
+
+b'HASH_BATCH_INSERT   count: 125000           speed: 58M/sec          loadfactor: 59%         \nHASH_BATCH_INSERT   count: 125000           speed: 41M/sec          loadfactor: 59%         \nHASH_BATCH_INSERT   count: 125000           speed: 25M/sec          loadfactor: 89%         \nHASH_BATCH_INSERT   count: 125000           speed: 39M/sec          loadfactor: 59%         \nHASH_BATCH_INSERT   count: 125000           speed: 50M/sec          loadfactor: 74%         \nHASH_BATCH_INSERT   count: 125000           speed: 18M/sec          loadfactor: 89%         \nHASH_BATCH_INSERT   count: 125000           speed: 28M/sec          loadfactor: 59%         \nHASH_BATCH_INSERT   count: 125000           speed: 57M/sec          loadfactor: 68%         \nHASH_BATCH_GET      count: 125000           speed: 140M/sec         loadfactor: 65%         \nHASH_BATCH_GET      count: 125000           speed: 135M/sec         loadfactor: 63%         \nHASH_BATCH_GET      count: 125000           speed: 110M/sec         loadfactor: 60%         \nHASH_BATCH_GET      count: 125000           speed: 132M/sec         loadfactor: 58%         \nHASH_BATCH_GET      count: 125000           speed: 77M/sec          loadfactor: 56%         \nHASH_BATCH_GET      count: 125000           speed: 129M/sec         loadfactor: 54%         \nHASH_BATCH_GET      count: 125000           speed: 100M/sec         loadfactor: 52%         \nHASH_BATCH_GET      count: 125000           speed: 104M/sec         loadfactor: 51%         \n----------------------------------------------\nAVG_INSERT: 40 M/sec,   AVG_GET: 116 M/sec,     MIN_SPEED_REQ: 40 M/sec \n\n'
+------- Test T3 END	---------- 	 [ OK RESULT: +15 pts ]
+
+
+
+------- Test T4 START	----------
+
+------- Test T4 END	---------- 	 [ FAILED ]
+Error with ['./gpu_hashtable', '10000000', '4', '50']
+
+
+
+------- Test T5 START	----------
+
+------- Test T5 END	---------- 	 [ FAILED ]
+Error with ['./gpu_hashtable', '40000000', '2', '50']
+
+TOTAL gpu_hashtable  15/85

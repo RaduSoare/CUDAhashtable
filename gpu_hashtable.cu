@@ -45,8 +45,8 @@ __global__ void kernel_insert_key(int *keys, int* values, int numKeys, HashTable
 		if (old == EMPTY_SLOT || old == keys[idx]) {
 			// Fara atomicCAS pentru a face update cand cheile sunt egale
 			hashTable->elements[hashcode].value = values[idx];
-			//foundEmptySlot = true;
-			break;
+			foundEmptySlot = true;
+			//break;
 		}
 		// Trece la slotul urmator daca cel curent este ocupat
 		hashcode = (hashcode + 1)  % (hashTable->capacity - 1);
@@ -91,23 +91,20 @@ __global__ void kernel_reshape(Elem* newElements, int newCapacity, HashTable* ol
 	
 
 	int hashcode = getHash(oldHashTable->elements[idx].key, newCapacity);
-	//printf("%d %d %d %d\n",idx, hashcode, oldHashTable->elements[idx].key, oldHashTable->elements[idx].value);
+	
 	bool rehashedKey = false;
 
 	while(!rehashedKey) {
 		int old = atomicCAS(&newElements[hashcode].key, EMPTY_SLOT, oldHashTable->elements[idx].key);
 		if (old == EMPTY_SLOT) {
 			atomicCAS(&newElements[hashcode].value, EMPTY_SLOT, oldHashTable->elements[idx].value);
-			//rehashedKey = true;
-			break;
+			rehashedKey = true;
+			//break;
 		}
 		hashcode = (hashcode + 1)  % (newCapacity - 1);
 	}
 
 }
-
-
-
 
 /**
  * Function constructor GpuHashTable
@@ -122,6 +119,7 @@ GpuHashTable::GpuHashTable(int size) {
 		cout << "HashMap Malloc Failed!" << endl;
 		return;
 	}
+
 
 	// Numarul maxim de elemente din hashtable
 	hashTable->capacity = size;
@@ -176,6 +174,8 @@ void GpuHashTable::reshape(int numBucketsReshape) {
 	if (hashTable->capacity % BLOCK_SIZE) {
 		numBlocks++;
 	}
+
+	
 	
 	
 	kernel_reshape<<<numBlocks, BLOCK_SIZE>>> (newElements, numBucketsReshape, hashTable);
@@ -226,14 +226,12 @@ bool GpuHashTable::insertBatch(int *keys, int* values, int numKeys) {
 	}
 
 	// Caz cand e nevoie de rehash
-	if ((float)(hashTable->size + numKeys) / hashTable->capacity >= MAX_LOAD_FACTOR) {
+	float newSize = (float)(hashTable->size + numKeys); 
+	if (newSize / hashTable->capacity >= MAX_LOAD_FACTOR) {
 		// Calculeaza noua capacitate
-		int updatedCapacity = ((float)(hashTable->size + numKeys) / MAX_LOAD_FACTOR) + 1;
-		//cout << "Trebuie resize "<< updatedCapacity << endl;
-		//fprintf(stdout, "%d\n", updatedCapacity);
+		int updatedCapacity = (newSize / DECENT_LOAD_FACTOR) + 1;
+		//cout << hashTable->size << " " << numKeys << " " << hashTable->capacity << " " << updatedCapacity <<
 		reshape(updatedCapacity);
-		
-		
 	}
 	
 	//cout << hashTable->size << " " << hashTable->capacity << endl;

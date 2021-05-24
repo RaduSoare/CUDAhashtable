@@ -6,9 +6,9 @@
 using namespace std;
 
 #define EMPTY_SLOT 0
-#define BLOCK_SIZE 256
-#define MAX_LOAD_FACTOR 0.8f
-#define MIN_LOAD_FACTOR 0.5f
+#define BLOCK_SIZE 1024
+#define MAX_LOAD_FACTOR 0.9f
+#define MIN_LOAD_FACTOR 0.67f
 #define DECENT_LOAD_FACTOR 0.7f
 
 typedef struct {

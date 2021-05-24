@@ -1,0 +1,18 @@
+HASH_BATCH_INSERT   count: 125000           speed: 65M/sec          loadfactor: 66%         
+HASH_BATCH_INSERT   count: 125000           speed: 45M/sec          loadfactor: 66%         
+HASH_BATCH_INSERT   count: 125000           speed: 32M/sec          loadfactor: 66%         
+HASH_BATCH_INSERT   count: 125000           speed: 27M/sec          loadfactor: 89%         
+HASH_BATCH_INSERT   count: 125000           speed: 33M/sec          loadfactor: 66%         
+HASH_BATCH_INSERT   count: 125000           speed: 43M/sec          loadfactor: 80%         
+HASH_BATCH_INSERT   count: 125000           speed: 20M/sec          loadfactor: 66%         
+HASH_BATCH_INSERT   count: 125000           speed: 48M/sec          loadfactor: 76%         
+HASH_BATCH_GET      count: 125000           speed: 145M/sec         loadfactor: 73%         
+HASH_BATCH_GET      count: 125000           speed: 147M/sec         loadfactor: 69%         
+HASH_BATCH_GET      count: 125000           speed: 119M/sec         loadfactor: 66%         
+HASH_BATCH_GET      count: 125000           speed: 147M/sec         loadfactor: 64%         
+HASH_BATCH_GET      count: 125000           speed: 115M/sec         loadfactor: 61%         
+HASH_BATCH_GET      count: 125000           speed: 103M/sec         loadfactor: 59%         
+HASH_BATCH_GET      count: 125000           speed: 102M/sec         loadfactor: 57%         
+HASH_BATCH_GET      count: 125000           speed: 93M/sec          loadfactor: 55%         
+----------------------------------------------
+AVG_INSERT: 39 M/sec,   AVG_GET: 121 M/sec,     MIN_SPEED_REQ: 40 M/sec 
