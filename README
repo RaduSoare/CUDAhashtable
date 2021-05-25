@@ -1,0 +1,157 @@
+    Soare Radu
+    336CB
+    Tema3 ASC - GPU Hashtable
+
+STRUCTURA DE DATE:
+    Pentru a crea HashTable-ul am folosit o structura in care sunt retinute 
+capacitatea maxima, numarul de elemente ocupate si un array de perechi
+(cheie, valoarea) care reprezinta elementele HashTable-ului.
+    Structura de date in sine este alocata atat pe GPU cat si pe CPU 
+(pentru a putea initializa in constructor size si capacity), insa array-ul
+de elemente este alocat doar pe GPU pentru ca acolo se intampla prelucrarile
+efective.
+
+FUNCTIE HASH:
+    As fi putut sa folosesc o functie de hash de tipul celei mentionate
+in cerinta, insa am considerat o oportunitate buna de research si am cautat
+metode optime si testate de hash-ing. Cea folosita este propusa de Thomas Mueller in
+https://stackoverflow.com/questions/664014/what-integer-hash-function-are-good-that-accepts-an-integer-hash-key
+care m-a convins pentru ca a lasat si codul cu care a fost dedusa functia.
+
+DETALII DE IMPLEMENTARE:
+ ** insertBatch **
+ - Copiaza cheile si valorile in array-uri alocate pe GPU
+ - Verifica daca adaugand numarul de chei s-ar depasi load factorul
+maxim stabilit la 90%
+ - Daca limita este depasita, se calculeaza noua capacitate astfel
+incat load factor-ul sa ramana sub 67% (valoarea stabilita empiric
+incercand diferite configuratii intre 70% si 65%) si se realoca
+un array de dimensiune suficent de mare (reshape).
+ - Inserarea efectiva se face in kernel_insert_key care calculeaza
+hash-ul si incearca sa adauge elementul la hash-ul respectiv (inserarea
+cheii se face cu atomicCAS pentru a nu avea situatii de race condition).
+Fiind predispus coliziunilor, daca slotul corespunzator hash-ului
+este ocupat, se incrementeaza valoarea hash-ului pana cand se va gasi
+un slot liber. Load factorul fiind mereu sub 100%, se garanteaza ca
+la un moment-dat o sa fie gasit un slot liber.
+* totusi gasirea slotului liber poate fi lenta cu aceasta metoda pe
+anumite corner case-uri -> toate sloturile de la dreapta hash-ului
+ar fi ocupate, insa in imediata vecinatate stanga ar avea un slot gol, 
+dar ma bazez pe calitatea functiei de hash ca elementele vor fi
+suficient de dispersate inca sa nu apara astfel de cazuri.
+
+** reshape **
+- Aloca pe GPU doar un array de perechi de capacitatea updatata
+- Daca hashTable-ul e gol, doar updateaza campurile din structura nefiind nevoie
+sa se apeleze functia de kernel
+- Altfel se apeleaza functia kernel_reshape care: ori nu se executa 
+daca slotul din vechiul array este neocupat, ori cauta un slot liber in
+noul array pentru elementul curent. 
+* Cautarea slotului liber se face asemanator cu insert cu aceleasi mentiuni.
+
+** getBatch **
+- Se aloca pe GPU un array in care se muta cheile si se aloca
+atat pe CPU cat si pe GPU un array in care sa fie puse valorile
+- Obtinerea valorilor se face in kernel_get. Aici se obtine
+hash-ul cheii si se cauta in vecinatatea acestuia cheia curenta.
+Din cauza coliziunilor, e posibil ca acea cheie sa nu fie la hash-ul generat,
+dar tinand cont de natura insert-ului, cheia ar trebui sa fie in vecinatatea
+apropiata a hash-ului generat initial.
+- Cand cheia este gasita in hashTable, este adaugata in array-ul
+de valori ce trebuie returnat
+
+
+OUTPUT TESTE:
+-> voi pune in arhiva un fisier "output_teste" in care voi redirecta outputul 
+scriptului python pentru a nu umple fisierul de README.
+
+DISCUTIE REZULTATE:
+** Voi atasa outputul nvprof pe testul 3 pentru ca acesta mi-a creat cele mai multe probleme **
+
+==649== NVPROF is profiling process 649, command: ./gpu_hashtable 1000000 8 40
+HASH_BATCH_INSERT   count: 125000           speed: 61M/sec          loadfactor: 66%         
+HASH_BATCH_INSERT   count: 125000           speed: 58M/sec          loadfactor: 66%         
+HASH_BATCH_INSERT   count: 125000           speed: 38M/sec          loadfactor: 66%         
+HASH_BATCH_INSERT   count: 125000           speed: 30M/sec          loadfactor: 89%         
+HASH_BATCH_INSERT   count: 125000           speed: 34M/sec          loadfactor: 66%         
+HASH_BATCH_INSERT   count: 125000           speed: 48M/sec          loadfactor: 80%         
+HASH_BATCH_INSERT   count: 125000           speed: 27M/sec          loadfactor: 66%         
+HASH_BATCH_INSERT   count: 125000           speed: 53M/sec          loadfactor: 76%         
+HASH_BATCH_GET      count: 125000           speed: 172M/sec         loadfactor: 73%         
+HASH_BATCH_GET      count: 125000           speed: 178M/sec         loadfactor: 69%         
+HASH_BATCH_GET      count: 125000           speed: 141M/sec         loadfactor: 66%         
+HASH_BATCH_GET      count: 125000           speed: 176M/sec         loadfactor: 64%         
+HASH_BATCH_GET      count: 125000           speed: 138M/sec         loadfactor: 61%         
+HASH_BATCH_GET      count: 125000           speed: 179M/sec         loadfactor: 59%         
+HASH_BATCH_GET      count: 125000           speed: 130M/sec         loadfactor: 57%         
+HASH_BATCH_GET      count: 125000           speed: 128M/sec         loadfactor: 55%         
+----------------------------------------------
+AVG_INSERT: 43 M/sec,   AVG_GET: 155 M/sec,     MIN_SPEED_REQ: 40 M/sec 
+
+==649== Profiling application: ./gpu_hashtable 1000000 8 40
+==649== Profiling result:
+            Type  Time(%)      Time     Calls       Avg       Min       Max  Name
+ GPU activities:   59.59%  9.4368ms         9  1.0485ms  16.225us  3.1620ms  kernel_insert_key(int*, int*, int, HashTable*)
+                   16.03%  2.5392ms         4  634.80us  157.96us  1.3025ms  kernel_reshape(Elem*, int, HashTable*)
+                   13.35%  2.1147ms        26  81.333us     960ns  100.87us  [CUDA memcpy HtoD]
+                   11.03%  1.7466ms         8  218.32us  170.76us  441.21us  kernel_get(HashTable*, int*, int*, int)
+      API calls:   86.33%  199.87ms         9  22.208ms  11.909us  199.25ms  cudaMallocManaged
+                    6.09%  14.097ms        21  671.27us  24.788us  3.1701ms  cudaDeviceSynchronize
+                    2.17%  5.0156ms        33  151.99us  8.3800us  746.04us  cudaMalloc
+                    2.08%  4.8044ms        26  184.78us  12.930us  284.01us  cudaMemcpy
+                    1.56%  3.6208ms        21  172.42us  52.122us  820.17us  cudaLaunch
+                    1.16%  2.6838ms        34  78.935us  8.4820us  125.21us  cudaFree
+                    0.34%  782.72us         2  391.36us  303.67us  479.05us  cuDeviceTotalMem
+                    0.23%  527.49us       188  2.8050us     146ns  101.70us  cuDeviceGetAttribute
+                    0.03%  58.216us         2  29.108us  19.955us  38.261us  cuDeviceGetName
+                    0.01%  27.774us        80     347ns     140ns  8.7200us  cudaSetupArgument
+                    0.01%  25.853us        71     364ns     199ns  1.1900us  cudaGetLastError
+                    0.00%  10.414us        21     495ns     305ns  1.6120us  cudaConfigureCall
+                    0.00%  4.4980us         4  1.1240us     187ns  3.4270us  cuDeviceGet
+                    0.00%  2.4030us         3     801ns     150ns  1.6970us  cuDeviceGetCount
+
+==649== Unified Memory profiling result:
+Device "Tesla K40m (0)"
+   Count  Avg Size  Min Size  Max Size  Total Size  Total Time  Name
+       5  4.0000KB  4.0000KB  4.0000KB  20.00000KB  13.53600us  Host To Device
+     110  48.290KB  4.0000KB  252.00KB  5.187500MB  956.2560us  Device To Host
+Total CPU Page faults: 52
+
+Observatii:
+ - load factorul la insert se pastreaza in limitele acceptate: 66% - 90%
+ - viteza de insert pe acest caz este la limita acceptata ceea ce se explica 
+vazand profiling-ul -> cel mai mult timp din rulare se petrece in functia de insert
+si ma astept ca acest lucru sa se datoreze coliziunilor de la inserare
+- viteza de insert mai mica este un trade-off cu viteza de get destul de buna.
+Limitele load factor-ului au fost testate empiric pana cand s-a obtinut o viteza de insert
+decenta si o viteza de get cat mai buna pentru ca intr-un caz real de folosire
+a unui hashtable, operatiile de get ar trebui sa fie mai dese decat cele de insert. 
+
+PROBLEME:
+- pe parcursul rezolvarii temei am observat ca intre rulari succesive 
+atat ale benchmark-ului cat si ale testelor rulate separat apareau 
+fluctuatii destul de mari ale vitezelor cu diferente si de 20M/sec ceea ce a
+ingreunat mult optimizarea temei pentru ca nu puteam vedea cu exactitate
+ce impact aveau modificarile pe care le faceam asupra performatei codului.
+Nu sunt sigur daca acest fenomen aparea din cauza incarcarii cozilor sau
+din cauza stadiului implementarii din acele momente.
+- din aceasta cauza testul 3 fluctueaza uneori intre 37 si 47 M/sec 
+ceea ce facea ca odata la cateva rulari sa pice la benchmark, desi 
+la rularea separata obtine mereu 40M/sec.
+- initial am incercat o varianta de HashTable care sa se redimensioneze dinamic
+ce se baza pe un array de liste inlantuite dupa modelul https://github.com/RaduSoare/Tema1SO/blob/main/hashmap.c
+insa m-am lovit de problema ca nu putea verifica in mod atomic (cu functii CUDA) 
+daca un nod era NULL sau nu fiindca atomicCAS poate compara doar cu valori numerice.
+
+
+Github repo: https://github.com/RaduSoare/Tema3ASC 
+
+
+
+
+
+
+
+
+
+

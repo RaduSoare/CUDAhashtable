@@ -8,7 +8,6 @@ using namespace std;
 #define EMPTY_SLOT 0
 #define BLOCK_SIZE 1024
 #define MAX_LOAD_FACTOR 0.9f
-#define MIN_LOAD_FACTOR 0.67f
 #define DECENT_LOAD_FACTOR 0.67f
 
 typedef struct {
@@ -42,6 +41,8 @@ class GpuHashTable
 		
 		bool insertBatch(int *keys, int* values, int numKeys);
 		int* getBatch(int* key, int numItems);
+
+		float loadFactor();
 	
 		~GpuHashTable();
 };

@@ -1,0 +1,37 @@
+
+
+
+------- Test T1 START	----------
+
+b'HASH_BATCH_INSERT   count: 1000000          speed: 88M/sec          loadfactor: 66%         \nHASH_BATCH_GET      count: 1000000          speed: 221M/sec         loadfactor: 50%         \n----------------------------------------------\nAVG_INSERT: 88 M/sec,   AVG_GET: 221 M/sec,     MIN_SPEED_REQ: 10 M/sec \n\n'
+------- Test T1 END	---------- 	 [ OK RESULT: +20 pts ]
+
+
+
+------- Test T2 START	----------
+
+b'HASH_BATCH_INSERT   count: 500000           speed: 84M/sec          loadfactor: 66%         \nHASH_BATCH_INSERT   count: 500000           speed: 69M/sec          loadfactor: 66%         \nHASH_BATCH_GET      count: 500000           speed: 205M/sec         loadfactor: 57%         \nHASH_BATCH_GET      count: 500000           speed: 164M/sec         loadfactor: 50%         \n----------------------------------------------\nAVG_INSERT: 76 M/sec,   AVG_GET: 185 M/sec,     MIN_SPEED_REQ: 20 M/sec \n\n'
+------- Test T2 END	---------- 	 [ OK RESULT: +20 pts ]
+
+
+
+------- Test T3 START	----------
+
+b'HASH_BATCH_INSERT   count: 125000           speed: 70M/sec          loadfactor: 66%         \nHASH_BATCH_INSERT   count: 125000           speed: 56M/sec          loadfactor: 66%         \nHASH_BATCH_INSERT   count: 125000           speed: 46M/sec          loadfactor: 66%         \nHASH_BATCH_INSERT   count: 125000           speed: 30M/sec          loadfactor: 89%         \nHASH_BATCH_INSERT   count: 125000           speed: 37M/sec          loadfactor: 66%         \nHASH_BATCH_INSERT   count: 125000           speed: 42M/sec          loadfactor: 80%         \nHASH_BATCH_INSERT   count: 125000           speed: 29M/sec          loadfactor: 66%         \nHASH_BATCH_INSERT   count: 125000           speed: 52M/sec          loadfactor: 76%         \nHASH_BATCH_GET      count: 125000           speed: 163M/sec         loadfactor: 73%         \nHASH_BATCH_GET      count: 125000           speed: 157M/sec         loadfactor: 69%         \nHASH_BATCH_GET      count: 125000           speed: 124M/sec         loadfactor: 66%         \nHASH_BATCH_GET      count: 125000           speed: 155M/sec         loadfactor: 64%         \nHASH_BATCH_GET      count: 125000           speed: 123M/sec         loadfactor: 61%         \nHASH_BATCH_GET      count: 125000           speed: 157M/sec         loadfactor: 59%         \nHASH_BATCH_GET      count: 125000           speed: 115M/sec         loadfactor: 57%         \nHASH_BATCH_GET      count: 125000           speed: 116M/sec         loadfactor: 55%         \n----------------------------------------------\nAVG_INSERT: 45 M/sec,   AVG_GET: 139 M/sec,     MIN_SPEED_REQ: 40 M/sec \n\n'
+------- Test T3 END	---------- 	 [ OK RESULT: +15 pts ]
+
+
+
+------- Test T4 START	----------
+
+b'HASH_BATCH_INSERT   count: 2500000          speed: 114M/sec         loadfactor: 66%         \nHASH_BATCH_INSERT   count: 2500000          speed: 87M/sec          loadfactor: 66%         \nHASH_BATCH_INSERT   count: 2500000          speed: 69M/sec          loadfactor: 66%         \nHASH_BATCH_INSERT   count: 2500000          speed: 36M/sec          loadfactor: 89%         \nHASH_BATCH_GET      count: 2500000          speed: 288M/sec         loadfactor: 80%         \nHASH_BATCH_GET      count: 2500000          speed: 277M/sec         loadfactor: 73%         \nHASH_BATCH_GET      count: 2500000          speed: 247M/sec         loadfactor: 66%         \nHASH_BATCH_GET      count: 2500000          speed: 120M/sec         loadfactor: 61%         \n----------------------------------------------\nAVG_INSERT: 76 M/sec,   AVG_GET: 233 M/sec,     MIN_SPEED_REQ: 50 M/sec \n\n'
+------- Test T4 END	---------- 	 [ OK RESULT: +15 pts ]
+
+
+
+------- Test T5 START	----------
+
+b'HASH_BATCH_INSERT   count: 20000000         speed: 120M/sec         loadfactor: 66%         \nHASH_BATCH_INSERT   count: 20000000         speed: 90M/sec          loadfactor: 66%         \nHASH_BATCH_GET      count: 20000000         speed: 227M/sec         loadfactor: 57%         \nHASH_BATCH_GET      count: 20000000         speed: 163M/sec         loadfactor: 50%         \n----------------------------------------------\nAVG_INSERT: 105 M/sec,  AVG_GET: 195 M/sec,     MIN_SPEED_REQ: 50 M/sec \n\n'
+------- Test T5 END	---------- 	 [ OK RESULT: +15 pts ]
+
+TOTAL gpu_hashtable  85/85
