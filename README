@@ -11,12 +11,6 @@ capacitatea maxima, numarul de elemente ocupate si un array de perechi
 de elemente este alocat doar pe GPU pentru ca acolo se intampla prelucrarile
 efective.
 
-FUNCTIE HASH:
-    As fi putut sa folosesc o functie de hash de tipul celei mentionate
-in cerinta, insa am considerat o oportunitate buna de research si am cautat
-metode optime si testate de hash-ing. Cea folosita este propusa de Thomas Mueller in
-https://stackoverflow.com/questions/664014/what-integer-hash-function-are-good-that-accepts-an-integer-hash-key
-care m-a convins pentru ca a lasat si codul cu care a fost dedusa functia.
 
 DETALII DE IMPLEMENTARE:
  ** insertBatch **
@@ -127,24 +121,6 @@ Limitele load factor-ului au fost testate empiric pana cand s-a obtinut o viteza
 decenta si o viteza de get cat mai buna pentru ca intr-un caz real de folosire
 a unui hashtable, operatiile de get ar trebui sa fie mai dese decat cele de insert. 
 
-PROBLEME:
-- pe parcursul rezolvarii temei am observat ca intre rulari succesive 
-atat ale benchmark-ului cat si ale testelor rulate separat apareau 
-fluctuatii destul de mari ale vitezelor cu diferente si de 20M/sec ceea ce a
-ingreunat mult optimizarea temei pentru ca nu puteam vedea cu exactitate
-ce impact aveau modificarile pe care le faceam asupra performatei codului.
-Nu sunt sigur daca acest fenomen aparea din cauza incarcarii cozilor sau
-din cauza stadiului implementarii din acele momente.
-- din aceasta cauza testul 3 fluctueaza uneori intre 37 si 47 M/sec 
-ceea ce facea ca odata la cateva rulari sa pice la benchmark, desi 
-la rularea separata obtine mereu 40M/sec.
-- initial am incercat o varianta de HashTable care sa se redimensioneze dinamic
-ce se baza pe un array de liste inlantuite dupa modelul https://github.com/RaduSoare/Tema1SO/blob/main/hashmap.c
-insa m-am lovit de problema ca nu putea verifica in mod atomic (cu functii CUDA) 
-daca un nod era NULL sau nu fiindca atomicCAS poate compara doar cu valori numerice.
-
-
-Github repo: https://github.com/RaduSoare/Tema3ASC 
 
 
 
